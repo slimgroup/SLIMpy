@@ -1,0 +1,78 @@
+"""
+This SConstruct is part of an exaple if how to create a simple SLIMpy application 
+"""
+
+from rsfproj import *
+
+from mpiexample import *
+from slimproj import *
+from SLIMpy import *
+from pdb import set_trace
+
+
+my_model = 'my_model'
+serial_result = 'serial_result'
+mpi_result = 'mpi_result' 
+parmpi_result = 'par_result'
+
+Flow( 'my_model', None,
+     'qdome  n1=400 n2=100 n3=50 | window n1=56 n2=56 | noise' )
+
+#===============================================================================
+# Serial Code
+#===============================================================================
+precondition_callback = lambda space: Identity(space)
+transform_callback = lambda space: fdct3(space,4,16,1)
+
+# call simple builder
+sres = PerformSimleOp( serial_result , my_model ,
+                         precondition_callback=precondition_callback,
+                         transform_callback=transform_callback,
+                         thr=0.001,
+                         post_mortem=True
+                         )
+
+#===============================================================================
+# MPI Code
+#===============================================================================
+def mpi_precondition_callback( space):
+    S = ScatterMPI( space, [2,1,1] )
+    M = Meta( S.range() )
+    return CompoundOperator( [M,S] )
+
+def mpi_transform_callback( space ):
+    M = Meta( space )
+    G = GhostTaper( M.range(), eps=8 )
+    MA = Meta( G.range() )
+    C = fdct3( MA.range( ), 4, 16, 1 )
+    return CompoundOperator( [C,MA,G,M] )
+
+# call simple builder
+mres = PerformSimleOp( mpi_result , my_model ,
+                         precondition_callback=mpi_precondition_callback,
+                         transform_callback=mpi_transform_callback,
+                         thr=0.001,
+                         post_mortem=True,
+                         )
+
+#===============================================================================
+# Parralel and MPI Code
+#===============================================================================
+# call simple builder
+pmres = PerformSimleOp( parmpi_result , my_model ,
+                         precondition_callback=mpi_precondition_callback,
+                         transform_callback=mpi_transform_callback,
+                         thr=0.001,
+                        # extra dist flags 
+                        callbacks=['dist'],
+                        NODELIST=['localhost','localhost'],
+                        # NODEFILE=environ['PBS_NODEFILE']
+                         )
+
+#===============================================================================
+# Hide SLIMpy documentaion/integration
+#===============================================================================
+Export('sres','mres','pmres' )
+SConscript( 'DocSconscript' )
+
+

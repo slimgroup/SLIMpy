@@ -1,0 +1,6 @@
+
+doxygen = WhereIs( 'doxygen' )
+
+doxy = Command( "html/index.html", "Doxyfile", "%(doxygen)s ${SOURCE}" %vars() )
+Alias( "doxy", doxy )
+Clean( "doxy" , 'html' )

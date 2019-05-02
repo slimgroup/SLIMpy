@@ -1,0 +1,18 @@
+When creating a new file, please:
+1. Add the content of COPYRIGHT.template at the beginning of each file.
+   Modify the YEAR(S) and AUTHOR(S) fields in the __copyright__ variable as needed.
+   See examples below for copyright line.
+2. Add module info at the beginning in place of "PUT HERE MODULE DOC STRING".
+3. If you import anyting from __future__ module,
+   it must go between module docstring and __copyright__ field.
+
+
+EXAMPLE 1: copyright with single year and author
+__copyright__ = """
+Copyright 2008 Sean Ross-Ross
+"""
+
+EXAMPLE 2: copyright with multiple years and authors
+__copyright__ = """
+Copyright 2007, 2008 Sean Ross-Ross, Henryk Modzelewski
+"""

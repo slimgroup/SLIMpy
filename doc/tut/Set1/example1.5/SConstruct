@@ -1,0 +1,167 @@
+"""/*!
+@page es1step5 Step 5
+Solve the full problem
+\f[
+  \tilde{\textbf{x}} = \arg\min \|\textbf{x}\|_1\quad\mbox{s.t.}\quad\left[
+    \begin{array}{ccc}
+      \textbf{PC} & \vline & \textbf{W}
+    \end{array}\right]\textbf{x}=\textbf{y}
+
+\f]
+
+\par Objectives: 
+ - Create an Augmented system of equations
+ - Change verbosity of the output 
+
+@par Additional inputs:
+ - 'lowfweight.rsf'
+ 
+@par Additional outputs:
+ - 'residual.rsf'
+ 
+@section Walkthrough
+The augmented operator created here represents the operator 
+in the above equation.
+
+@code 
+    AH = AugOperator( [[PC],
+                      [W]] )
+@endcode 
+
+@subsection voo Verbosity Output Options
+Also note that the options passed into the SwellSeparation builder have changed.
+@code 
+    debug=['stat'] , logfile='sep.log'
+@endcode
+the debug=['stat'] tells SLIMpy to only print the current status to the screen.
+The logfile options save all of the printed and unprinted output to the file sep.log.
+since there is so much information sep.log is not an ascii file and it must be viewd with the 
+slimpy record_viewer.py executable.
+\par Example usage:
+To view the output the same as the provious example do:  
+@code
+record_viewer.py -a cmd -a err sep.log
+@endcode 
+*/"""
+
+
+from slimproj import *
+
+from SLIMpy.linear_operators import *
+from slimpy_contrib.ana.GenLandweber import GenThreshLandweber
+from slimpy_contrib.ana.utils.thresholds import LinearCooling
+from SLIMpy import DotTest, VectorSpace
+
+
+from rsfproj import *
+#===============================================================================
+# import local plotting function
+#===============================================================================
+from os.path import abspath
+sys.path.append( abspath('..') )
+from swellplot import plot_swell
+
+
+data =  '../data.rsf'
+sig =   '../sig.rsf'
+noise = '../swellnoise.rsf'
+weight = 'lowfweight.rsf'
+residual = 'residual'
+
+@slim_builder_simple
+def SwellSeparation( vectors,nouter=2, ninner=2, lmax=0.01, lmin=0.02 ):
+    """
+    @param vectors  a list of vectors created from SCons sources
+    @param thr      the value to threshold with 
+    """
+    
+    y = vectors[0]
+    weight = vectors[1]
+    
+    C = Cosine( y.space )
+    P = DiagonalWeight( y.space, weight )
+    
+    thresh = LinearCooling( lmax, lmin, nouter )
+    
+    solver = GenThreshLandweber( nouter, ninner, thresh )
+    
+    
+    PC = CompoundOperator( [P,C] )
+    W = dwt( y.space )
+    
+     
+    AH = AugOperator( [[PC],
+                      [W]] )
+    
+    D = DiagonalWeight( AH.domain(), .49 )
+    
+    AD = CompoundOperator( [AH,D] )
+    
+    A = AD.H
+    
+    #solve for x s.t. y = C*x
+    x = solver.solve( A, y )
+    
+    
+    noise  = .49 * ( PC.H * x.flat[0] )
+    signal = .49 * ( W.H * x.flat[1]  )
+    
+    return noise,signal
+
+#===============================================================================
+# Flows
+#===============================================================================
+Flow ( weight, None, 
+       'math n1=512 output="1-(1*x1*0.1/512.0)" '
+       )
+
+SwellSeparation( ['enoise','esig'], [data,weight],
+                 # SwellSeparation options 
+                 nouter=10, ninner=10, lmax=0.001, lmin=0.99,
+                 # slimpy options 
+                 debug=['stat'] , logfile='sep.log'
+                )
+
+Flow( residual, [ data, 'enoise','esig' ], 
+      ' math en=${SOURCES[1]} es=${SOURCES[2]} output="input-en-es" ' 
+      )
+
+
+#===============================================================================
+# RSF plotting functions
+#===============================================================================
+plot_swell( data, noise, sig , 'enoise', 'esig', 'residual' )
+
+
+
+#===============================================================================
+# Dot Test 
+#===============================================================================
+
+@slim_builder_simple
+def AugmentedDotTest( vectors):
+    
+    y = vectors[0]
+    weight = vectors[1]
+    
+    C = Cosine( y.space )
+    P = DiagonalWeight( y.space, weight )
+    
+    PC = CompoundOperator( [P,C] )
+    W = dwt( y.space )
+    
+     
+    AH = AugOperator( [[PC],
+                      [W]] )
+    
+    D = DiagonalWeight( AH.domain(), .49 )
+    
+    AD = CompoundOperator( [AH,D] )
+    
+    DotTest(AD,2,5)
+
+
+test = AugmentedDotTest( 'test', [data,weight],
+                              debug=[] , logfile='dottest' )
+Alias( 'dottest', test)
+

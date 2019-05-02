@@ -1,0 +1,75 @@
+#!/usr/bin/env python
+# encoding: utf-8
+
+__copyright__ = """
+Copyright 2008 Sean Ross-Ross
+"""
+__license__ =  """
+This file is part of SLIMpy.
+
+SLIMpy is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+SLIMpy is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with SLIMpy. If not, see <http://www.gnu.org/licenses/>.
+"""
+
+from SLIMpy.setup.default_options import options as opts
+
+#from glob import glob
+#from os.path import isdir
+import sys
+from subprocess import Popen,PIPE
+
+def get_completion_str():
+    
+    long_opts = []
+    short_opts= []
+    for opt in opts.values():
+        
+        long_opts.extend(opt._long_opts)
+        short_opts.extend(opt._short_opts)
+    
+    long_opts.append('--help')
+    short_opts.append('-h')
+    return long_opts,short_opts
+
+filter = lambda opts,so_far: [opt for opt in opts if opt.startswith(so_far)]
+
+def print_opts(opts,so_far):    
+    kept = filter(opts,so_far)
+    for opt in kept:
+        print opt
+        
+def main():
+    command = sys.argv[1]
+    so_far = sys.argv[2]
+#    prev = sys.argv[3]
+    
+    
+#    print >> sys.stderr, '[',prev,so_far,']',
+    long_opts,short_opts = get_completion_str()
+    
+    
+    if so_far.startswith("--"):
+        print_opts(long_opts,so_far)
+    elif so_far.startswith("-"):
+        print_opts(short_opts,so_far)
+    elif so_far.startswith(","):    
+        p0 = Popen( "%(command)s --options" %vars(), shell=True, stdout=PIPE)    
+        ret = p0.wait()
+        if not ret:
+            print_opts(p0.stdout, so_far[1:])
+        
+if __name__ == '__main__':
+    main()
+
+
+

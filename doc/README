@@ -1,0 +1,7 @@
+
+To Create HTML documentation run:
+
+ [shell]$ scons
+ 
+
+prerequisites: 'doxygen' executable is installed. 

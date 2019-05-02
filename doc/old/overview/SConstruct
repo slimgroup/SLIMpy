@@ -1,0 +1,69 @@
+__copyright__ = """
+Copyright 2008 Sean Ross-Ross
+"""
+__license__ =  """
+This file is part of SLIMpy.
+
+SLIMpy is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+SLIMpy is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with SLIMpy. If not, see <http://www.gnu.org/licenses/>.
+"""
+
+from glob import glob
+
+from slimproj import *
+
+
+#tut_index = TutorialIndex( 'tutorials' , None )
+#demo_index = DemoIndex( 'demos' , None )
+
+how_to = MkHowTo( ['SLIMpyOverview'] )
+how_to = MkHowTo( ['funcs'])
+#                          'abstract',
+#                          'installation',
+#                          'license',
+#                          'tests',
+#                          'functionality',
+#                          tut_index,
+#                          demo_index] )
+
+                          
+overview = Alias( 'overview', how_to)
+
+
+TestSLIMpy( 'tests' )
+
+Default( "mkhowto" )
+
+aux_files = glob('*.aux')
+Clean( 'mkhowto',  aux_files )
+
+#from functionality import functionality
+#profile = Tracker( 'profile',[] )
+
+#func_tex = LatexFromPickle('functionality','profile')
+
+#@Action
+#def man_gen( target, source, env):
+##    from slimproj_core import
+#    from slimproj_core.manfile_gen import genorate_man
+#    manpage = open( str(target[0]) ,'w')
+#    manpage.write( genorate_man( ) )
+#    manpage.close()
+#    return
+#
+#com = Command( ['slimproj_man'], None ,man_gen )
+#man = Command( ['slimproj_man.html'],com , "man ./${SOURCE} | man2html > ${TARGET}" )
+#
+#Alias( 'profile', profile )
+#Alias( 'mkhowto', profile )
+#Alias( 'mkhowto', man )

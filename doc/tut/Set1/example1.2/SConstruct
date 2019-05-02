@@ -1,0 +1,139 @@
+"""/*!
+@page es1step2 Step 2
+\par Objectives: 
+ - Integrate the previous example with SCons and Madagascar reproducibility 
+ - Perform a dot-test on a linear operator
+\section walkthrough Walkthrough
+
+@par Usage:
+@code
+    scons view
+    scons dottest
+@endcode
+@par Preamble
+
+@code
+from slimproj import *
+@endcode 
+
+slimproj is the SLIMpy SCons integration package.
+Hopefully you are familiar with the Madagascar pacage
+ 
+@code
+from rsfproj import *
+
+Flow( 'sig', None , "sigmoid n1=256 n2=256" )
+Flow( 'data', 'sig' , "noise var=0.0002" )
+@endcode 
+
+This code does the same as in the previous example and creates the sigmoid synthetic model and data.
+ 
+@code
+@slim_builder_simple
+def SwellSeparation( vectors, thr=0.001 ):
+@endcode 
+
+Here I define the body of the code in the function SurfaceletDeNoise. 
+SurfaceletDeNoise is a special function because it has the 
+\ref slimproj_core.builders.funtion_decorators.slim_builder_simple "slim_builder_simple" 
+decorator above it. 
+This turns the function into a SCons Builder object.
+The body of the code is defined the same as the previous example.
+@code
+res = SwellSeparation( 'enoise', data , thr=0.001 )
+@endcode
+Here we call the SCons Builder to build the target @a res.rsf from the soucre @a data.rsf. 
+The reason that I do it this way - by putting the body of the code inside a builder - instead 
+of just calling the code inline inside of the SConstruct, is becuase at the time scons is evaulating 
+this code nothing has been built yet. This means that we have to give scons 
+somthing to run after this script exits
+so that scons can track the dependancies and build everything in order.
+
+@par Dot-Testing functionality
+
+Dot-testing in SLIMpy is very simple. SLIMpy can create random noise realizations from a linear operator's domain and range 
+which are
+@ref slimpy_base.Core.User.Structures.VectorSpace.VectorSpace "VectorSpace"
+objects. From these the 
+@ref slimpy_base.utils.DotTest.DotTest "DotTest"
+can compute @f$ \langle Ay,x \rangle \approx \langle A^{H}x, y \rangle @f$. 
+
+@code
+DotTest(A,5,5)
+@endcode
+
+In this case the first parameter @b A is the cosine transform and the second two parameters are 
+the precision of a pass or fail and the number of noise realizations to test.
+
+*/"""
+
+import sys
+
+#===============================================================================
+# import local plotting function
+#===============================================================================
+from os.path import abspath
+sys.path.append( abspath('..') )
+from swellplot import plot_swell
+ 
+from slimproj import *
+
+from SLIMpy.linear_operators import Cosine
+from SLIMpy import DotTest
+
+#===============================================================================
+# Madagascar 
+#===============================================================================
+
+from rsfproj import *
+
+data = '../data.rsf'
+sig = '../sig.rsf'
+noise = '../swellnoise.rsf'
+#SConscript( '../SConstruct' )
+
+#===============================================================================
+# SLIMpy Bulider
+#===============================================================================
+
+@slim_builder_simple
+def SwellSeparation( vectors, thr=0.001 ):
+    """
+    @param vectors  a list of vectors created from SCons sources
+    @param thr      the value to threshold with 
+    """
+    
+    data = vectors[0]
+    A = Cosine( data.space )
+    
+    tmp1 = A * data
+    tmp2 = tmp1.thr( thr )
+    res  = A.H * tmp2 
+
+    return res
+
+e_noise = SwellSeparation( 'enoise', data , thr=5 )
+e_sig   = Flow( 'esig' , ['enoise', data] , 'math i=${SOURCES[1]} output="input-i"' )
+
+
+
+
+#===============================================================================
+# RSF plotting functions
+#===============================================================================
+plot_swell( data, noise, sig , 'enoise', 'esig' )
+
+#===============================================================================
+# Dot Test 
+#===============================================================================
+
+@slim_builder_simple
+def CosineDotTest( vectors):
+    
+    A = Cosine( vectors[0].space )
+    DotTest(A,5,5)
+
+
+test = CosineDotTest( 'test', data , 
+                      debug=[], logfile='dottest' )
+Alias( 'dottest', test)

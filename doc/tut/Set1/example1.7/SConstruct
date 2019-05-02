@@ -1,0 +1,81 @@
+"""/*!
+@page es1step7 Step 7
+
+\par Objectives: 
+ - Make the script more portable and easy to use by using the slimproj 
+   \a Solve builder
+ - Create a SLIMpy application by encapsulating the problem in a portable python module. 
+@par Additional inputs:
+ - 'lowfweight.rsf'
+ - 'swellsep.py' contains  definition of swell separation problem
+ 
+@par Additional outputs:
+ - 'residual.rsf'
+ 
+@section Walkthrough
+I have replaced the builder with the Built in Solve builder.
+I have ecapsulated the swell separation problem into the python module swellsep.py. 
+Notice how in the function call of the Solve Builder the argument \a problem is given as 
+\a \ref swellplot.l1swell_sep "l1swell_sep"
+. 
+*/"""
+
+
+from slimproj import *
+from SLIMpy import vector
+from SLIMpy import DotTest, VectorSpace
+from swellsep import l1swell_sep
+
+from rsfproj import *
+#===============================================================================
+# import local plotting function
+#===============================================================================
+from os.path import abspath
+sys.path.append( abspath( '..' ) )
+from swellplot import plot_swell
+
+data =  '../data.rsf'
+sig =   '../sig.rsf'
+noise = '../swellnoise.rsf'
+weight = 'lowfweight.rsf'
+residual = 'residual'
+
+#===============================================================================
+# Flows
+#===============================================================================
+Flow ( weight, None, 
+       'math n1=512 output="1-(1*x1*0.1/512.0)" '
+       )
+
+Solve( ['enoise','esig'], [data,weight],
+       problem=l1swell_sep,
+       # slimpy options 
+       debug=['stat'] , logfile='sep.log'
+                )
+
+Flow( residual, [ data, 'enoise','esig' ], 
+      ' math en=${SOURCES[1]} es=${SOURCES[2]} output="input-en-es" ' 
+      )
+
+
+#===============================================================================
+# RSF plotting functions
+#===============================================================================
+plot_swell( data, noise, sig , 'enoise', 'esig', 'residual' )
+
+
+#===============================================================================
+# Dot Test 
+#===============================================================================
+
+@slim_builder
+def AugmentedDotTest( target, source, env ):
+    
+    y = vector(source[0])
+    AD = transfrom_callback( target, source, env , y.space )
+    DotTest(AD,2,5)
+
+test = AugmentedDotTest( 'test', [data,weight],
+                              debug=[] , logfile='dottest' )
+Alias( 'dottest', test)
+

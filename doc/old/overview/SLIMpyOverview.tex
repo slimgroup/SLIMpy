@@ -1,0 +1,270 @@
+\documentclass{manual}
+
+
+
+\author{Sean Ross-Ross }
+
+\title{SLIMpy}
+
+\makeindex
+
+\authoraddress{
+        Seismic Laboratory for Imaging and Modeling  \\
+        Email: \email{srossross@gmail.com}
+}
+
+\begin{document}
+
+\maketitle
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ifhtml
+\chapter*{Front Matter \label{front}}
+\fi
+
+\begin{definitions}
+
+\term{ User Mailing List } 
+\url{http://slim.eos.ubc.ca/mailman/listinfo/slimpy-user}
+
+
+\term{ Developer Mailing List }
+\url{http://slim.eos.ubc.ca/mailman/listinfo/slimpy-devel}
+
+
+\term{Emails}
+Email \citetitle[mailto:nadmin@slim.eos.ubc.ca]
+    {nadmin@slim.eos.ubc.ca}
+ for requests to join the developer team
+
+
+\end{definitions}
+
+\include{abstract}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\include{license}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{ What Is SLIMpy? }
+
+SLIMpy is a software library that contains definitions of coordinate free vectors and  linear
+operators. The SLIMpy library allows the user to design and run algorithms with any seismic software 
+% explain o-o-c
+package such as Madagascar \textbf{CITE?}, SepLib \textbf{CITE?} and SU \textbf{CITE?}. 
+The common feature of these packages is to use out-of-core 
+algorithms, that is i.e, algorithms that process  
+to much data to fit it all into the computers main memory. SLIMpy allows the user to design an run algorithms using a Matlab \textbf{CITE?} 
+style interface while executing each command with a seismic software package.
+SLIMpy allows for flexible and fast prototyping of algorithms.
+SLMpy extends each out-of-core package by
+providing a parallel IO service.
+
+SLIMpy looks at each main program of each of these out-of-core packages as a matrix vector
+operation or vector reduction/transformation operation. It uses operator
+overloading to generate an abstract syntax tree (AST) which can be optimized in
+many ways before executing its commands. The AST also provides a pathway for
+embarrassingly parallel and multi-process applications by sending branches of 
+the tree over different nodes and processors. 
+SLIMpy provides an interface to these out-of-core packages that allows optimal
+construction of commands and allows for iterative techniques such as conjugate gradients or
+$l_{1}$ solvers.
+As such, SLIMpy smoothes the
+transition from other languages such as Matlab and allows the algorithm designer
+to write readable and reusable code. 
+
+Inverse problems in seismology are large. The number of
+unknowns can  exceed $2^{30}$, matrix-vector operations can take hours, days, or
+even weeks. The software development cycle emphasizes processing flows which
+typically involve highly technical coding, little code reuse and poor readability. 
+
+Out-of-core-memory software
+environments dominate the  geophysical processing field.
+Such environments are designed to handle data that does not fit in main memory. Each base
+operation is created as a main program that reads  and writes data from the hard disk. 
+The main programs can also be chained together on stdin/out pipes
+using a shell, writing data to disk only at the end of the pipe. 
+To be efficient, an algorithm using an out-of-core package
+ must have its operations chained together into the
+longest pipe avoiding excessive disk I/O .
+As a result, designing an I/O efficient algorithm can be very complex, especially 
+when iterative methods are used. 
+These algorithms
+tend to be written in shell scripts and can therefor be difficult to read, understand and maintain.  
+
+The research at SLIM utilizes non-separable transforms such
+ as the curvelet %\cite{FDCT}
+  or surfacelet %\cite{ndfb_surf} 
+  transform. 
+ The use of non-separable transforms coupled with the size of the problems 
+ prevent development and use of iterative algorithms at a low level such
+as C, C++ or Fortran. In some cases, such as the curvelet transform, the memory requirements
+restrict the number of operations to one curvelet transform per processor. Writing
+an $l_{1}$ solver in c-shell or bash was becoming very difficult and cumbersome.
+
+
+
+\chapter{ Download and Install }
+
+    \include{installation}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Getting Started}
+
+	
+
+	\section{Overview}
+		This section is for those who want to program a SLIMpy ANA or Application.
+		
+		SLIMpy contains Vectors, vector spaces and  linear operators. 
+		
+		%TODO: doc
+		More documentation to come
+		
+		
+	\section{Configuring SLIMpy}
+	   
+	   SLIMpy contains no architecture dependent code but it does run into problems running other 
+	   code. that is why you can and should configure SLIMpy. 
+	   
+	   to configure SLIMpy, run the command 
+	   \code{configure_slimpy} located in the SLIMpy/scripts directory. this will write a file 
+	   \code{~/.slimpy_rc}
+	   witch is a python file that contains the default variables for SLIMpy.
+	   
+   Logging options:
+   \begin{tableiii}{l|l|l}{exception}{Variable Name}{Default}{Info}
+		\lineiii{verbose}{0}{set the verbosity from 1 to 10}
+		\lineiii{abridge}{True}{shorten output with abridge-map. replace key with value
+		for key/value pairs in abridge-map option}
+		\lineiii{logfile}{None}{file to print to}
+		\lineiii{debug}{['cmd','err']}{print extra info to logfile eg. print >>
+		log(10,"foo") will print if debug=foo}
+   \end{tableiii}
+
+Distributed/MPI Options:       
+    \begin{tableiii}{l|l|l}{exception}{Variable Name}{Default}{Info}
+		\lineiii{NODELIST}{[]}{python list containing node names for mpi and
+		distributed SLIMpy}
+		\lineiii{NODEFILE}{PBS_NODEFILE}{file containing list of node names for mpi}
+		\lineiii{localtmpdir}{/var/tmp}{used in mpi - temp header files will be built (local to each node)}
+		\lineiii{np}{1}{number of processors running in mpi}
+		\lineiii{mpi}{False}{ deprecated }
+		\lineiii{rsh}{ssh}{distributed mode: command used to talk with nodes}
+		\lineiii{MPIRUN}{mpirun_ssh}{ mpi executable}
+		\lineiii{MPIFLAGS}{MPIRUN -np np -hostfile NODEFILE}{flags to pass to mpi on the command line}
+   \end{tableiii}
+
+Other Options:
+\begin{tableiii}{l|l|l}{exception}{Variable Name}{Default}{Info}
+
+	\lineiii{run_again}{False}{Run a command again upon failing}
+	\lineiii{memsize}{500}{set the memory available to each program}
+	\lineiii{sync_disk_om_rm}{True}{calls SYNC_CMD before removing data on disk}
+	\lineiii{globaltmpdir}{HOME}{mpi - temp header files will be built - global for every node }
+	\lineiii{datapath}{/Tools/toolboxes/rsf_stuff/datapath}{path where permanent data files will be built}
+	\lineiii{test_devel}{False}{run developer tests, usually known bugs}
+	\lineiii{use_scalar_obj}{True}{Track scalars in AST with slimpy scalar object}
+	\lineiii{no_del}{False}{bool, if true SLIMpy will not delete data until the end}
+	\lineiii{check_path}{False}{bool - check if all executable paths exist}
+	\lineiii{runtype}{normal}{"normal" or "dryrun"}
+	\lineiii{walltime}{60*30}{amount of time a command is allowed to take}
+	\lineiii{SYNC_CMD}{sync}{No Doc}
+	\lineiii{strict_check}{2}{0,1 or 2. On 0 no domain/range checking. 1 checking. 2 no void Spaces will be accepted}
+	\lineiii{keep_tb_info}{True}{No Doc}
+
+\end{tableiii} 
+
+Obsolete Options:
+\begin{tableiii}{l|l|l}{exception}{Variable Name}{Default}{Info}
+	\lineiii{show_std_err}{False}{Replaced by debug option}
+	\lineiii{tmpdatapath}{/var/tmp}{No Doc}
+	\lineiii{nwin}{0}{dimensions to split the data into - mpi}
+	\lineiii{eps}{0}{Domain decomposition overlap}
+
+\end{tableiii} 
+
+\chapter{Tutorials}
+	
+	Included are tutorials found in the directory SLIMpy/doc/tut/.
+	If you are new to SLIMpy Look at the simple example.  
+	\include{tutorials}
+
+\chapter{Demos}
+
+	\include{demos}
+
+\chapter{Functionality}
+    \citetitle[../funcs/index.html]{Functionality}
+    % \include{functionality}
+
+\chapter{Regression Tests}
+
+    \include{tests}
+
+\chapter{Reference}
+    \section{Automatically generated reference}
+    The SLIMpy reference guide was created with doxygen. 
+    \citetitle[../ref/index.html]{SLIMpy Reference}
+    \section{Man Page}
+    \citetitle[../man/slimproj_man.html]{SLIMpy manpage}
+    
+    
+\chapter{ FAQ }
+	\section*{What does the \method{updateAbridgeMap} method do}
+	\method{updateAbridgeMap} is a purely aesthetic function that replaces the output
+	to make it more manageable For example the command:
+\begin{verbatim} 
+		>>> updateAbridgeMap(RSFROOT='')
+\end{verbatim}
+	will  replace all of the instances of
+	'/User/someone/path/to/RSF/bin/sffunction' to 'sffunction'
+	I find that is is much easier to work with that.
+
+    \section*{Scons runs my demo again even when the result has been built}
+    	if you import slimproj and use  builders such as \code{Solve} SLIMpy adds extra dependancies
+	such as the SLIMpy svn revision number. to find out why scons is rebuilding your target run scons with the command line option \longprogramopt{debug=explain}
+	
+    \section*{How do I debug my SLIMpy script embedded in SCons}
+    Learn the python interactive debugger!
+    
+    To stop python at a line and run the code interactively:
+\begin{verbatim} 
+		>>> import pdb
+		>>> pdb.set_trace()
+\end{verbatim}
+On the command line you can do: scons \longprogramopt{debug=pdb}
+ 
+or: 
+
+In your SConstruct if you use a slim builder such as \code{Solve} you can add the 
+parameter "post_mortem=True" to the builder method. This will allow you to inspect the code after it fails. 
+    
+    \section*{How can I know which linear operators are defined}
+\begin{verbatim} 
+		>>> import SLIMpy
+		>>> SLIMpy.listLinop()
+\end{verbatim}
+    
+    \section*{What is the difference between Scatter and ScatterMPI?}
+    \method{Scatter} is a linear operator that wraps a number of windowing
+    operators into a loop. The output of applying the scatter operator is an
+    augmented vector. 
+    
+    \method{ScatterMPI} is a linear operator that uses an mpi command
+    and the result is a "meta" vector - SLIM's xml data format - the "meta"
+    format can be changed to an augmented vector and back with the \code{Meta} linear
+    operator. If the error originates within SLIMpy's python code please pass me
+    on the error. However if the error is being raised from a command line mpi
+    subprocess call then your SLIMpy may not be configured properly. 
+    
+    See section 2.3 Configuring SLIMpy.
+    
+    
+\end{document}

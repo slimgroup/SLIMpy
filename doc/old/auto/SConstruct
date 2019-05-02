@@ -1,0 +1,80 @@
+__copyright__ = """
+Copyright 2008 Sean Ross-Ross
+"""
+__license__ =  """
+This file is part of SLIMpy.
+
+SLIMpy is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+SLIMpy is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with SLIMpy. If not, see <http://www.gnu.org/licenses/>.
+"""
+
+from os import walk,system,curdir
+from os.path import dirname,join,abspath
+import SLIMpy
+
+from os import environ
+
+slfile = dirname(SLIMpy.__file__)
+w = walk( slfile )
+fpath = "/".join(slfile.split("/")[:-1])+"/"
+
+PYTHONPATH = environ.get("PYTHONPATH","")
+
+pydoc = WhereIs('pydoc')
+def helper():
+    
+    for dir , nextdirs , files in w:
+        if ".svn" not in dir and 'test' not in dir and 'Plugin' not in dir and 'doc' not in dir:
+            
+            imp = dir.replace(fpath, "")
+            ldir = imp.split('/')
+            
+            #yield ".".join(ldir)
+            
+            for f in files:
+                if f.endswith(".py"):
+                    file = join(dir,f)
+                    
+                    if f == "__init__.py":
+                        imp = ".".join(ldir)
+                        html = ".".join(ldir+["html"])
+                    else:
+                        imp = ".".join(ldir+[f[:-3]])
+                        html = ".".join(ldir+[f[:-3] + ".html"])
+                    yield file ,html, imp
+
+env = Environment(ENV = dict(PATH = environ['PATH'],PYTHONPATH = environ["PYTHONPATH"] , RSFROOT = environ["RSFROOT"] ) )
+
+subdir = abspath(curdir)
+topdir = abspath(str(env.Dir('#')))
+
+
+result = []
+installs = []
+for file ,html,imp in helper():
+	if subdir == topdir:
+		html = env.Command( html,file , "%(pydoc)s -w %(imp)s" %vars() )
+	else:
+		html = env.Command( html,file , "cd %(subdir)s;\n%(pydoc)s -w %(imp)s;\n cd %(topdir)s;" %vars() )
+	result.append(html)
+	
+	i = env.Install('../html/autodoc',html )
+	installs.append(i)
+
+Alias('install', installs )
+#env.Alias( result, 'auto'  )
+#env.Alias( result, 'html'  )
+
+
+
+	

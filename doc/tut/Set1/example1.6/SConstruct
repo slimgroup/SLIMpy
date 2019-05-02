@@ -1,0 +1,124 @@
+"""/*!
+@page es1step6 Step 6
+
+\par Objectives: 
+ - Make the script more portable and easy to use by using the built-in solve builder
+ 
+@section Walkthrough
+I have replaced the builder with the Built in Solve builder
+@par Additional inputs:
+ - 'lowfweight.rsf'
+ 
+@par Additional outputs:
+ - 'residual.rsf'
+
+
+*/"""
+
+
+from slimproj import *
+from SLIMpy.linear_operators import *
+from SLIMpy import vector
+from SLIMpy import DotTest, VectorSpace
+from slimpy_contrib.ana.problems.l1_minimization_problem import l1_min
+
+from rsfproj import *
+#===============================================================================
+# import local plotting function
+#===============================================================================
+from os.path import abspath
+sys.path.append( abspath('..') )
+from swellplot import plot_swell
+
+
+data =  '../data.rsf'
+sig =   '../sig.rsf'
+noise = '../swellnoise.rsf'
+weight = 'lowfweight.rsf'
+residual = 'residual'
+
+#Global Operators
+PC = None
+W = None
+
+def transform_callback( target, source, env, space ):
+    
+    global PC, W
+    
+    weight = vector( source[1] )
+    
+    C = Cosine( space )
+    P = DiagonalWeight( space, weight )
+    
+    PC = CompoundOperator( [P,C] )
+    W = dwt( space )
+     
+    AH = AugOperator( [[PC],
+                      [W]] )
+    
+    D = DiagonalWeight( AH.domain(), .49 )
+    
+    AD = CompoundOperator( [AH,D] )
+    
+    A = AD.H
+    return A
+
+def recovery_callback( target, source, env, space ):
+    
+    AH = AugOperator( [[PC.H, 0  ],
+                      [ 0,   W.H ]] )
+    
+    D = DiagonalWeight( AH.range(), .49 )
+    DA = CompoundOperator( [D,AH] )
+    return DA
+
+def result_callback( target, source, env, result ):
+    result.flat[0].setName( str(target[0] ) ) 
+    result.flat[1].setName( str(target[1] ) )
+
+
+#===============================================================================
+# Flows
+#===============================================================================
+
+Flow ( weight, None, 
+       'math n1=512 output="1-(1*x1*0.1/512.0)" '
+       )
+
+Solve( ['enoise','esig'], [data,weight],
+       problem=l1_min,
+       transform_callback=transform_callback,
+       inv_callback = recovery_callback,
+       result_callback=result_callback,
+       # l1_min problem options 
+       nouter=10, ninner=10, lmax=0.001, lmin=0.99,
+       # slimpy options 
+       debug=['stat'] , logfile='sep.log'
+                )
+
+
+Flow( residual, [ data, 'enoise','esig' ], 
+      ' math en=${SOURCES[1]} es=${SOURCES[2]} output="input-en-es" ' 
+      )
+
+
+#===============================================================================
+# RSF plotting functions
+#===============================================================================
+plot_swell( data, noise, sig , 'enoise', 'esig', 'residual' )
+
+#===============================================================================
+# Dot Test 
+#===============================================================================
+
+@slim_builder
+def AugmentedDotTest( target, source, env ):
+    
+    y = vector(source[0])
+    AD = transfrom_callback( target, source, env , y.space )
+    DotTest(AD,2,5)
+
+test = AugmentedDotTest( 'test', [data,weight],
+                              debug=[] , logfile='dottest' )
+Alias( 'dottest', test)
+

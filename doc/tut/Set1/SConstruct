@@ -1,0 +1,130 @@
+"""/*!
+@page ExampleSet1 Example Set 1
+
+ This examples is for the SLIMpy beginer.
+ We will build up to solving the l1 minimization problem.
+ We denote @b y a seismic trace corrupted by swell noise. A
+possible approach to denoising takes advantage of the sparsity of
+swell noise in the DCT domain and of seismic signal in the wavelet
+domain. The forward problem is as follows:
+ 
+   \f[
+  \textbf{y}
+  = \left[
+    \begin{array}{ccc}
+      \textbf{PC} & \vline & \textbf{W}
+    \end{array}\right]
+  \left[
+    \begin{array}{c}
+      x_1 \\
+      \vdots \\
+      x_N \\
+      \hline
+      x_{N+1} \\
+      \vdots \\
+      x_{2N}     
+    \end{array}\right]
+   \f]
+   
+In this equation, \f$\left[
+  \begin{array}{ccc}
+    x_1 & \ldots & x_N
+  \end{array}\right]^T
+\f$ represents the DCT contribution in the total data and \f$\left[
+  \begin{array}{ccc}
+    x_{N+1} & \ldots & x_{2N}
+  \end{array}\right]^T
+\f$ the wavelet contribution. The operators @f$\textbf{P}@f$, @f$\textbf{C}@f$,
+and @f$\textbf{W}@f$ are a frequency weighting, the DCT, and the wavelet
+transforms, respectively. The inverse problem is as follows:
+
+\f[
+  \tilde{\textbf{x}} = \arg\min \|\textbf{x}\|_1\quad\mbox{s.t.}\quad\left[
+    \begin{array}{ccc}
+      \textbf{PC} & \vline & \textbf{W}
+    \end{array}\right]\textbf{x}=\textbf{y}
+
+\f]
+and the denoise signal, @b s , is given by
+
+\f[
+  \textbf{s} = \textbf{W}
+  \left[
+    \begin{array}{c}
+      \tilde{x}_{N+1} \\
+      \vdots \\
+      \tilde{x}_{2N}     
+    \end{array}\right].
+\f]
+
+   \par Learing objectives:
+     - To start a simple slimpy script.  
+     - Learn about SLIMpy.
+     - Create a black box package to solve a general problem
+
+\par Inputs:
+ - \a swellnoise.rsf the synthetic model of the swell noise
+ - \a sig.rsf the synthetic model of the data
+ - \a data.rsf the synthetic model produced from sfsigmoid
+\par Outputs:
+ - \a esig.rsf the esimated signal 
+ - \a enoise.rsf the esimated noise
+ - \a residual.rsf the diffrence between the data, esimated signal and esimated noise
+\par Prerequisite:
+ - SLIMpy and ContribSLIMpy
+ - Madagascar
+ - SCons
+ - All steps require `scons' to be run from the Set1 directory to create inputs.
+
+@section s1 Step 1
+Link: @subpage es1step1 
+@copydoc es1step1
+
+@section s2 Step 2
+Link: @subpage es1step2 
+@copydoc es1step2
+
+@section s3 Step 3
+Link: @subpage es1step3 
+@copydoc es1step3
+
+@section s4 Step 4
+Link: @subpage es1step4 
+@copydoc es1step4
+
+@section s5 Step 5
+Link: @subpage es1step5 
+@copydoc es1step5
+
+@section s6 Step 6
+Link: @subpage es1step6 
+@copydoc es1step6
+
+@section s7 Step 7
+Link: @subpage es1step7 
+@copydoc es1step7
+
+*/"""
+
+
+from rsfproj import *
+
+
+Flow( 'swellnoise',None, 'math n1=512 output="0.05*cos(x1*6*3.145)" ' )
+Flow( 'sig', None,
+    '''
+    spike n1=512 nsp=5 k1=12,123,214,435 mag=1,-.85,-.71,.5 |
+    ricker1
+    ''' )
+
+Flow( 'data', ['sig','swellnoise'], 
+      'math sig=${SOURCES[1]} output="input+sig" ' )
+
+Result('swellnoise', 'graph' )
+Result('sig', 'graph' )
+Result('data', 'graph' )
+
+End()
+
+
+

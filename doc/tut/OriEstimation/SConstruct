@@ -1,0 +1,121 @@
+"""/*! \page Orientation Estimation
+@section Background
+The goal of this tutorial is to show how SLIMpy can be used in the 
+process of estimating the image gradient orientations 
+(direction of edges in an image) using the linear structure
+tensor so that the estimates are robust to added noise.
+
+The structure tensor @b T of an image @b I is defined to be the outer product
+of the image gradient vector with itself:
+\f[
+  \textbf{T} = \left(\begin{array}{c}I_x \\I_y\end{array}\right) \left(\begin{array}{cc}I_x & I_y\end{array}\right)=\left(\begin{array}{cc}I_x^2 & I_xI_y\\I_xI_y&I_y^2\end{array}\right) 
+\f]
+
+Then this structure tensor is blurred with an averaging filter @b A to form
+the linear structure tensor @b L:
+\f[
+\textbf{L} = A \ast T
+\f]
+
+Finally, the robust-to-noise gradient direction can be computed by finding the eigenvector corresponding to
+the larger eigenvalue of the 2x2 matrix @b L.
+
+This tutorial will do the above computation of the gradient direction using three SLIMpy linear operators - one that adds
+noise to the original image, another which takes averages across the image in local windows, and the third which finds a preliminary
+estimate to the gradient direction using a special 3x3 filter.
+*/"""
+
+#################################################################################
+# Gradient Orientation Estimation with Linear Structure Tensor
+#
+# Author: Reza Shahidi
+#         Seismic Laboratory for Imaging and Modeling
+#         Department of Earth & Ocean Sciences
+#         The University of British Columbia
+#         
+# Date:   July 2008
+#################################################################################
+from slimproj import *
+from OrientationEstimation import *
+from new_smoothgradient_slimpy import *
+from new_smoothgradient_rsf_integration import *
+from new_noise_slimpy import *
+from new_noise_rsf_integration import *
+
+import os, sys
+from rsfproj import *
+
+python = WhereIs('python')
+
+env = Environment()
+user = os.path.basename(os.getcwd())
+
+py_progs = 'smoothgradient'
+
+
+#Fetch the data from the model.
+FTPserver = {'server': 'slim.eos.ubc.ca',
+    	     'login':'anonymous','password':'anonymous'}
+filesloc = os.path.join('synth','marmousi')
+Fetch('marmousi_model_p.rsf',filesloc,FTPserver)
+
+#Convert the data back to XDR to native.
+Flow('marmousi_model','marmousi_model_p','dd form=native')
+
+# Python main programs
+py_mains = Split(py_progs)
+for prog in py_mains:
+    # no compilation but rename
+    env.InstallAs('sf'+prog,'M'+prog+'.py')
+
+@slim_builder_simple
+def new_noise_bldr( vectors ):
+    """
+    use our new noise operator
+    """
+    z = vectors[0] 
+
+    N = noiseX( z.space, sigma=0.08 )
+    N.space = z.space
+
+    noisyimage = N*z
+
+    return noisyimage 
+
+@slim_builder_simple
+def new_smoothgradient_bldr( vectors ):
+    """
+    use our new smooth gradient operator
+    """
+    z = vectors[0]
+
+    dx_outfile = vectors[1]
+    dy_outfile = vectors[2]
+
+    D = smoothgradientX( z.space, dx_outputfilename=dx_outfile, dy_outputfilename=dy_outfile)
+    D.space = z.space,z.space
+
+    Grad = D*z
+
+    return Grad
+
+@slim_builder_simple
+def OrientationEstimation_bldr( vectors ):
+    """
+    use our new Orientation Estimation operator
+    """
+
+    theta = OrientationEstimation( "marmousi_theta.rsf", ["marmousi_noisy.rsf", "marmousi_gradx.rsf", "marmousi_grady.rsf"], "" )
+
+gradfilename='marmousi_grad'
+noisydata='marmousi_noisy'
+gradxfilename='marmousi_gradx'
+gradyfilename='marmousi_grady'
+
+new_noise_bldr('marmousi_noisy', 'marmousi_model')
+Flow('marmousi_grad','marmousi_noisy', 
+		python+' Msmoothgradient.py'+
+                """ dx_outputfilename=\'marmousi_gradx.rsf\' dy_outputfilename=\'marmousi_grady.rsf\'
+                """)
+
+OrientationEstimation_bldr( "marmousi_theta.rsf",["marmousi_model.rsf", "marmousi_gradx.rsf", "marmousi_grady.rsf"])

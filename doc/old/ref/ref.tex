@@ -1,0 +1,140 @@
+\documentclass{manual}
+
+
+\author{Sean Ross-Ross }
+
+\title{SLIMpy Refrence Guide}
+
+\makeindex
+
+\authoraddress{
+        Seismic Laboratory for Imaging and Modeling  \\
+        Email: \email{srossross@google.com}
+}
+
+\begin{document}
+
+\maketitle
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\ifhtml
+\chapter*{Front Matter\label{front}}
+\fi
+
+\include{abstract}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\include{license}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{ Introduction }
+
+\begin{notice} [note] 
+This is not a complete refrence to SLIMpy. For the complete dsocumentation see the
+\citetitle[../../auto/SLIMpy.html]{SLIMpy Pydoc}
+\end{notice}
+
+\chapter{Command Line Options}
+	
+\begin{tableiii}{l|l|l}{programopt}{Short Options}{Long
+Options}{Description}
+
+  \lineiii{-h} {\longprogramopt{help}}
+              {show a help message and exit}
+              
+  \lineiii{-v} {\longprogramopt{verbose}=1}
+                        {print various outputs to stderr 0 to 10}
+                        
+  \lineiii{-m} {\longprogramopt{memsize}=500}
+                        {memory size to pass to out-of-core functions in MB}
+                        
+  \lineiii{-q}{\longprogramopt{quiet}} 
+  				           {print no output to stderr}
+  				           
+  \lineiii{-t} {\longprogramopt{tmpdir}=TMPDIR}
+                        {Temporary directory to store header information}
+                        
+  \lineiii{-p}{\longprogramopt{pipe}} 
+  			            {Use the bilt-in pipe structure of (p)SLIMpy -efficient for
+  			            out-of-core use}
+  			            
+  \lineiii{-i}{\longprogramopt{no-pipe}}         
+  						{Do not use the
+  						bilt-in pipe structure of (p)SLIMpy -Good for debugging }
+  						
+  \lineiii{ }{\longprogramopt{tmpdatapath}=TDP}
+  					    { Directory to store temporary binary data }
+  \lineiii{ }{\longprogramopt{globaltmpdir}=GTD}
+  						{Global temporary directory.  Used in parallel computation to share data.}
+  \lineiii{ }{\longprogramopt{localtmpdir}=LTD}
+  					    { Local temporary directory.  Used in parallel computation to work
+  					    locally.}
+  \lineiii{ }{\longprogramopt{eps}=EPS} 
+  				       {Parallel only. Domain decomposition overlap parameter.
+                        Common across all dimensions.}
+  \lineiii{ }{\longprogramopt{nwin}=NWIN}
+  						{Parallel only. Defines domain decomposition across all
+                         dimensions. }
+  \lineiii{-s}{\longprogramopt{scons}}
+  						{output a scons file to stdout}
+  \lineiii{-d}{\longprogramopt{dot}}
+  						{output a dot file to stdout}
+  \lineiii{-n}{\longprogramopt{dryrun}}
+  						{print output only do not run commands}
+  \lineiii{-l}{\longprogramopt{log}=FILE}
+  						{file to write all output to}
+  \lineiii{ }{\longprogramopt{debug}=DEBUG}         
+  						{print output only relative to crertain debug types:
+                         cleaner display solver}
+  \lineiii{ }{\longprogramopt{test}}
+  		                 {run a test suit to test the slimpy framework}
+	
+\end{tableiii}
+
+\begin{definitions} 
+
+\term{help}
+
+\term{verbose}
+	
+\term{memsize}
+\term{quiet}
+\term{tmpdir}
+\term{pipe}
+\term{no-pipe}      
+\term{tmpdatapath}
+\term{globaltmpdir}
+\term{localtmpdir}
+\term{eps}
+\term{nwin}
+\term{scons}
+\term{dot}
+\term{dryrun}
+\term{log}
+\term{debug}
+\term{test}
+  
+  
+\end{definitions}
+
+\chapter{ Packages }
+
+\refmodule [Vector]{Vector}
+
+\include{Vector}
+
+\end{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

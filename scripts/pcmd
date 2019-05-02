@@ -1,0 +1,127 @@
+#!/usr/bin/env python
+
+__copyright__ = """
+Copyright 2008 Henryk Modzelewski
+"""
+__license__ =  """
+This file is part of SLIMpy.
+
+SLIMpy is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+SLIMpy is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with SLIMpy. If not, see <http://www.gnu.org/licenses/>.
+"""
+
+COPYRIGHT = __copyright__
+DESCRIPTION = '''
+A simple parallel execution of arbitrary commands
+'''
+
+# imports
+import sys
+import getopt
+from datetime import timedelta
+from SLIMutils.pcmdutils import ExecCMDs,get_nodes,get_cmds
+
+def usage():
+    """ print usage info """
+    print DESCRIPTION
+    print 'pcmd [options]'
+    print '\t-r remote shell (current is '+RSH+')'
+    print '\t-d directory with node and command lists (current is '+DIR+')'
+    print '\t-n file-name with list of nodes (current is '+NODELIST+')'
+    print '\t\t single user@node or node per line'
+    print '\t\t w/o empty lines and comments'
+    print '\t-N full-path to file with list of nodes'
+    print '\t\t (overwrites -d and -n if given)'
+    print '\t-c file-name with list of commands (current is '+CMDLIST+')'
+    print '\t\t a sequence of commands (separated by &&, ||, ;, or pipes) per line'
+    print '\t\t w/o empty lines and comments'
+    print '\t\t\t the command line is surrounded by single quote (\')'
+    print '\t\t\t and executed with single remote shell invocation'
+    print '\t-C full-path to file with list of commands'
+    print '\t\t (overwrites -d and -n if given)'
+    print '\t-e full-path to common execution directory (current is '+str(EXEDIR)+')'
+    print '\t\t the remote shell will first cd to this directory'
+    print '\t-t timeout per command line in seconds (current is '+str(TIMEOUT)+')'
+    print '\t\t the remote shell will be killed after that time'
+    print '\t-i how often to check for progress in seconds (current is '+str(TIMECHECK)+')'
+    print '\t-w show execution times'
+    print '\t-v be verbose'
+    print '\t-h help'
+    print COPYRIGHT
+    sys.exit(2)
+
+# default options
+RSH = 'ssh'
+DIR = '.'
+NODELIST = 'nodelist'
+FULLNODELIST = None
+CMDLIST = 'cmdlist'
+FULLCMDLIST = None
+EXEDIR = None
+TIMEOUT = 86400L
+TIMECHECK = 10
+SHOWTIMES = False
+VERBOSE = False
+
+# get options and arguments
+try:
+    opts, args = getopt.getopt(sys.argv[1:], 'r:d:n:N:c:C:e:t:i:wvh')
+except getopt.GetoptError:
+    usage()
+
+# process options
+for o, a in opts:
+    if o == '-r': RSH = a
+    if o == '-d': DIR = a
+    if o == '-n': NODELIST = a
+    if o == '-N': FULLNODELIST = a
+    if o == '-c': CMDLIST = a
+    if o == '-C': FULLCMDLIST = a
+    if o == '-e': EXEDIR = a
+    if o == '-t': TIMEOUT = abs(long(a))
+    if o == '-i': TIMECHECK = abs(int(a))
+    if o == '-w': SHOWTIMES = True
+    if o == '-v': VERBOSE = True
+    if o == '-h': usage()
+
+# process options and arguments
+if len(args) > 0:
+     usage()
+
+# get nodes and commands
+if FULLNODELIST: nodelist = FULLNODELIST
+else: nodelist = DIR+'/'+NODELIST
+nodes = get_nodes(nodelist)
+noden = len(nodes)
+
+if FULLCMDLIST: cmdlist = FULLCMDLIST
+else: cmdlist = DIR+'/'+CMDLIST
+cmds = get_cmds(cmdlist,EXEDIR)
+cmdn = len(cmds)
+
+# inform user
+if VERBOSE:
+    print 'Found lists in',DIR
+    print 'Found',noden,'nodes'
+    print 'Found',cmdn,'commands'
+    if ( noden > cmdn ): print 'WARNING: more nodes than commands'
+    if ( cmdn > noden ): print 'WARNING: more commands than nodes'
+
+# last fixes to variables
+TIMEOUT=timedelta(0,TIMEOUT)
+
+# execute
+status = ExecCMDs(nodes,cmds,
+         RSH=RSH,TIMEOUT=TIMEOUT,TIMECHECK=TIMECHECK,SHOWTIMES=SHOWTIMES,VERBOSE=VERBOSE)
+
+sys.exit(status)

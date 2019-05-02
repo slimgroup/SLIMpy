@@ -1,0 +1,53 @@
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\par{Prerequisites}
+
+\begin{definitions}
+
+	\term{Python} SLIMpy is written in pure Python. python 2.5 is required 
+	\url{http://www.python.org}
+	
+	\term{SCons} is a build tool similar to make. you will need version 0.98.x and
+	up.
+ 	\url{http://www.scons.org}
+	
+	\term{svn} is a versioning client similar to cvs \url{http://www.subversion.tigris.org}
+	
+	\term{Madagascar} is an open-source software package for geophysical data
+	processing and reproducible numerical experiments.
+	\url{http://rsf.sourceforge.net/}
+	
+	
+\end{definitions}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\par{Acquiring SLIMpy }
+
+
+To install slimpy check it out of the slimpy repository by using the command 
+
+\samp{\program{svn} \programopt{co}
+\programopt{https://wave.eos.ubc.ca/Public/Public.Software.SLIMpy/STABLE}
+\programopt{./core}} 
+
+\par{Installing SLIMpy }
+
+Once the files have downloaded onto your machine change
+in to the \file{core} directory and type
+
+\samp{\program{python} \program{setup.py} \programopt{install}
+[\longprogramopt{prefix=/path/to/mypython}]}
+
+
+\begin{notice} [note] 
+If you use the \longprogramopt{prefix} option the path you set must be on your \envvar{PYTHONPATH}.
+\end{notice}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

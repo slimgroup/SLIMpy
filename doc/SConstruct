@@ -1,0 +1,68 @@
+"""/*!
+@page tutpage SLIMpy Tutorials
+This page contains the  SLIMpy Tutorials found in the ROOT/doc/tut/ directory
+@section eset1 Example Set 1
+ Link: @subpage ExampleSet1
+ 
+ @copydoc ExampleSet1
+
+@section eset2 Integrate a new Linear Operator
+ Link: @subpage ExampleSet2
+ 
+ @copydoc ExampleSet2
+ 
+*/"""
+
+__copyright__ = """
+Copyright 2008 Sean Ross-Ross
+"""
+__license__ =  """
+This file is part of SLIMpy.
+
+SLIMpy is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+SLIMpy is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with SLIMpy. If not, see <http://www.gnu.org/licenses/>.
+"""
+
+from os.path import join,isdir,isfile
+from os import pathsep,environ
+from glob import glob
+
+#from Apps.SLIMScons import slim_env
+from slimproj import *
+
+#===============================================================================
+# doxygen
+#===============================================================================
+doxygen = WhereIs( 'doxygen' )
+if not doxygen:
+    raise Exception("need doxygen executable to create SLIMpy documentation") 
+
+errmsg = ("could not find ContribSLIMpy directory: need to get this from \nSLIM "
+                    "svn https://wave.eos.ubc.ca/Public/Public.Software.SLIMpy-contrib/ "
+                    "and specify 'ContribSLIMpy' environment variable")
+
+ContribSLIMpy = environ.get( 'ContribSLIMpy', '../../ContribSLIMpy/' )
+if not isdir(ContribSLIMpy):
+    raise Exception(errmsg) 
+
+htmldir = Dir('html')
+doxy = Command( htmldir, "Doxyfile", "(cat $SOURCE; echo INPUT = .. %(ContribSLIMpy)s ) |%(doxygen)s -" %vars() )
+AlwaysBuild('html')
+Default('html')
+Clean( "." , htmldir )
+
+Command( 'rsync', htmldir, 
+         'rsync -avH --rsh=ssh --delete ./html/ '
+         'wadmin@slim.eos.ubc.ca:/Volumes/Data/WebServer/Sites/Misc/SLIMpy' )
+
+

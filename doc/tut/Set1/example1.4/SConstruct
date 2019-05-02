@@ -1,0 +1,111 @@
+"""/*!
+@page es1step4 Step 4
+The next step is to create a compound operator @b PC where @b P is the diagonal 
+weighting on the range of @b C.
+\f[
+  \tilde{\textbf{x}} = \arg\min \|\textbf{x}\|_1\quad\mbox{s.t.}\quad
+      \textbf{PC}
+    \textbf{x}+\epsilon=\textbf{y}
+\f]
+ 
+\par Objectives: 
+ - Create a compound operator  
+ - Learn more of the builtin SLIMpy Options
+ 
+@section Walkthrough
+
+The code in extremely similar to the previous example, except this time we pass the
+operator @a A into the solver.
+@code
+>>> C = Cosine( y.space )
+>>> P = DiagonalWeight( C.range(), weight )
+    
+>>> A = CompoundOperator( [P,C] ).H
+
+@endcode
+*/"""
+
+
+from slimproj import *
+
+from SLIMpy.linear_operators import *
+from slimpy_contrib.ana.GenLandweber import GenThreshLandweber
+from slimpy_contrib.ana.utils.thresholds import LinearCooling
+from SLIMpy import DotTest
+
+from rsfproj import *
+#===============================================================================
+# import local plotting function
+#===============================================================================
+from os.path import abspath
+sys.path.append( abspath('..') )
+from swellplot import plot_swell
+
+
+
+data = '../data.rsf'
+sig = '../sig.rsf'
+noise = '../swellnoise.rsf'
+
+weight = 'lowfweight.rsf'
+
+@slim_builder_simple
+def SwellSeparation( vectors, nouter=2, ninner=2, lmax=0.01, lmin=0.02 ):
+    """
+    @param vectors  a list of vectors created from SCons sources
+    @param thr      the value to threshold with 
+    """
+    
+    y = vectors[0]
+    weight = vectors[1]
+    
+    C = Cosine( y.space )
+    P = DiagonalWeight( C.range(), weight )
+    
+    A = CompoundOperator( [P,C] ).H
+    
+    thresh = LinearCooling( .01, .02, nouter )
+    solver = GenThreshLandweber( nouter, 5, thresh )
+    
+    #solve for x s.t. y = C*x
+    x = solver.solve( A, y )
+
+    res = C * x
+
+    return res
+
+
+Flow ( weight, None, 
+       'math n1=512 output="1-(1*x1*0.1/512.0)" '
+       )
+
+SwellSeparation( ['enoise'], [data,weight] , nouter=5, ninner=5, lmax=0.001, lmin=0.1 )
+
+Flow( 'esig', ['enoise', data] , 'math x=${SOURCES[1]} output="x-input"' )
+
+#===============================================================================
+# RSF plotting functions
+#===============================================================================
+plot_swell( data, noise, sig , 'enoise', 'esig' )
+
+#===============================================================================
+# Dot Test 
+#===============================================================================
+
+@slim_builder_simple
+def WeightedCosineDotTest( vectors):
+    
+    y = vectors[0]
+    weight = vectors[1]
+    
+    C = Cosine( y.space )
+    P = DiagonalWeight( y.space, weight )
+    
+    A = CompoundOperator( [P,C] )
+    DotTest(A,3,5)
+
+
+test = WeightedCosineDotTest( 'test', [data,weight],
+                               debug=[] )
+Alias( 'dottest', test)
+

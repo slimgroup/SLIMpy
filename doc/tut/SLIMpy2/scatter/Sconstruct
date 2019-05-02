@@ -1,0 +1,27 @@
+"""
+This SConstruct is part of an exaple if how to create a simple SLIMpy application 
+"""
+
+from Scattertest import *
+from slimproj import *
+from rsfproj import *
+
+from os.path import join, pardir
+
+
+result = ['gathered']
+srcs =   ['sigm']
+
+
+profiler = Profiler( 'pscatter' )
+
+Flow( srcs, None, 'sigmoid n1=256 n2=256' )
+
+env = Environment( )
+result = env.MyScatter( result , srcs ,numblocks=[2,2],
+                    profiler=profiler,
+                    callbacks=['dist'],
+                    NODELIST=['localhost'],
+                    np=2,
+#                    post_mortem=True,
+                    )

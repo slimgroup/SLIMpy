@@ -1,0 +1,25 @@
+'''
+add simple tutorial to SLIMpy webpages 
+'''
+
+from slimproj import *
+from os.path import join, pardir
+
+simpleterm = Term( 'mpiexample' )
+add_to_tutorials( simpleterm )
+
+
+UP_TITLE = 'SLIMpy Documentation'
+UP_LINK  =  join(pardir, pardir, "SLIMpy", 'SLIMpyOverview', 'index.html')
+
+
+how_to = MkHowTo( ['mpiexample', 'mpiexample.py' ] , UP_TITLE=UP_TITLE, UP_LINK=UP_LINK)
+
+Alias( 'html',  how_to )
+
+Import( 'sres','mres' ,'pmres')
+Default( sres, mres ,pmres)
+
+Alias( 'serial', sres)
+Alias( 'mpi', mres)
+Alias( 'parallel', pmres)

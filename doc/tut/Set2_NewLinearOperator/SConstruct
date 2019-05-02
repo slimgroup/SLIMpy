@@ -1,0 +1,74 @@
+"""/*!
+@page ExampleSet2 Integrate a new Linear Operator
+
+This examples is for a SLIMpy user who is familiar with the SLIMpy 
+vector and linear operator API.
+In this example I will go through the steps to create a new linear operator in SLIMpy.
+
+\par Learing objectives:
+ - Add a new Linear Operator to SLIMpy  
+ - Gain more understanding about SLIMpy's AST
+
+
+\par Inputs:
+ - None so far
+\par Python Modules:
+ - new_fft_slimpy.py contains a slimpy fft linear operator 
+ - new_fft_rsf_integration.py contains the rsf definition of the fft operator
+
+\par Outputs:
+ - None so far
+\par Prerequisite:
+ - SLIMpy and ContribSLIMpy
+ - Madagascar
+ - SCons
+
+@section Walkthrough
+There are two parts to createing a linear operator in SLIMpy: 
+ - A Python class that represents the operator in SLIMpy, found in new_fft_slimpy.py
+ - A Python class that defines how a plugin may use the operator, found in new_fft_rsf_integration.py
+
+In this example the operator class will be an fft transfrom and the plugin definition will be RSF.
+We need to import both of those python modules to get a working linear operator in RSF. if we neglected to
+import new_fft_rsf_integration.py the code would give us an error when it tries to execute the fft1X executable
+which does not exist. Since fft1X is not defined in SLIMpy's RSF plugin, SLIMpy uses its best 
+guess on how to use fft1X with RSF. 
+
+Try it yourself in interactive python mode with the fft1X do not import new_fft_rsf_integration. You will
+see that fft1X is a fully formed linear operotor. Without the rsf information SLIMpy will not give you error 
+checking when the operator is created or applied, and the domain is known but the range is not. the range of the 
+operator will become an instance of the voidSpace class.
+*/"""
+
+import new_fft_rsf_integration
+from new_fft_slimpy import fft1X  
+from slimproj import *
+
+from rsfproj import *
+
+@slim_builder_simple
+def new_fft_bldr( vectors ):
+    """
+    use our new fft operator
+    """
+    z = vectors[0] 
+
+    
+    F = fft1X( z.space, sym=True, opt=False )
+    
+    x = F*z
+    
+    print x
+    print repr(x.space)
+    nrm = x.norm( 1 )
+    
+    tmp = x - nrm
+    
+    res = F.adj( ) * tmp
+    
+    return res
+
+Flow( 'newfoo', None, 'sfsigmoid n1=128 n2=128' )
+
+new_fft_bldr( 'res', 'newfoo' )
+    

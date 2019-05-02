@@ -1,0 +1,11 @@
+
+from glob import glob
+from os.path import join
+
+examples_path = join( "*", "SConstruct" )
+
+SConstructs = glob( examples_path )
+
+
+for scnt in SConstructs:
+    SConscript(scnt)

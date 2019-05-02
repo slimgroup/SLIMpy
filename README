@@ -1,0 +1,65 @@
+*****************************************************************************
+This directory contains SLIMpy, a Python interface to generate executable
+statements for the out-of-core unix-pipe based (seismic) processing packages.
+
+SLIMpy is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+SLIMpy is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with SLIMpy. If not, see <http://www.gnu.org/licenses/>.
+*****************************************************************************
+
+
+PREREQUISITES
+	-> Python 2.5+ is installed on your system (http://www.python.org)
+	-> Numpy 1.0.4+ is installed on your system (http://numpy.scipy.org/)
+        -> SCons 0.98+ is installed on your system (http://www.scons.org)
+                - Make sure your SCons libs are correctly installed into the PYTHONPATH.
+                - For example add /sw/lib/scons-{version} to your PYTHONPATH.
+
+QUICK INSTALLATION
+	-> Installation into the default PYTHONPATH and PATH location:
+		python setup.py install
+
+CUSTOM INSTALLATION
+	-> To install it into a specific location:
+		python setup.py install --prefix=/path/to/location
+		
+		Where $SLIMPYINSTALL is /path/to/location of SLIMpy
+		- Add $SLIMPYINSTALL/lib/python{version}/site-packages to $PYTHONPATH
+		- Add $SLIMPYINSTALL/bin to $PATH
+
+WORKING FROM SVN REPOSITORY
+	-> Alternativly, if $SLIMpyCORE is the path to your working copy of SLIMpy core folder, you may
+	just add these to your environment:
+		Add $SLIMpyCORE to PYTHONPATH
+			export PYTHONPATH=$PYTHONPATH:$SLIMpyCORE
+		Add $SLIMpyCORE/scripts to PATH
+			export PATH=$PATH:$SLIMpyCORE/scripts
+
+
+TESTING
+	to test SLIMpy you can run python -c "import SLIMpy;SLIMpy.test()"
+
+
+RUNNING THE PACKAGE
+	-> Go into your python interpreter.
+	-> Type "import SLIMpy" at your python command prompt.
+
+
+SUPPORT
+	Mailing lists:
+		users:      http://slim.eos.ubc.ca/mailman/listinfo/slimpy-user
+		developers: http://slim.eos.ubc.ca/mailman/listinfo/slimpy-devel
+  	Web page:           http://slim.eos.ubc.ca/SLIMpy/
+
+
+CONTACT
+	SLIM Administrator (nadmin@slim.eos.ubc.ca)

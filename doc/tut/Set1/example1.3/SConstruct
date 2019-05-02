@@ -1,0 +1,85 @@
+"""/*!
+@page es1step3 Step 3
+In this step we will build a slimpy script to solve the problem:
+\f[
+  \tilde{\textbf{x}} = \arg\min \|\textbf{x}\|_1\quad\mbox{s.t.}\quad
+      \textbf{C} 
+    \textbf{x}+\epsilon=\textbf{y}
+\f]
+where @b C is the cosine transform and @b x is the swell noise and @f$\epsilon@f$ is the signal.
+I will use the existing thresholded landweber solver with a linear threshold cooling scheme.
+ 
+\par Objectives: 
+ - Use an exsiting iterative solver     
+
+@section Walkthrough
+
+Using the code from the previous example I have chenged the code in the body of the 
+function @b SwellSeparation. 
+@code 
+>>> thresh = LinearCooling( lmax, lmin, nouter )
+    
+>>> solver = GenThreshLandweber( nouter, ninner, thresh  )
+    
+>>> x = solver.solve( C.H, y )
+
+>>> res = C.H * x
+@endcode
+
+*/"""
+
+
+from slimproj import *
+
+from SLIMpy.linear_operators import Cosine
+from slimpy_contrib.ana.GenLandweber import GenThreshLandweber
+from slimpy_contrib.ana.utils.thresholds import LinearCooling
+from SLIMpy import DotTest
+
+
+from rsfproj import *
+#===============================================================================
+# import local plotting function
+#===============================================================================
+from os.path import abspath
+sys.path.append( abspath('..') )
+from swellplot import plot_swell
+
+
+data = '../data.rsf'
+sig = '../sig.rsf'
+noise = '../swellnoise.rsf'
+
+
+
+@slim_builder_simple
+def SwellSeparation( vectors, nouter=2, ninner=2, lmax=0.01, lmin=0.02  ):
+    """
+    @param vectors  a list of vectors created from SCons sources
+    @param thr      the value to threshold with 
+    """
+    
+    y = vectors[0]
+    
+    C = Cosine( y.space )
+    
+    thresh = LinearCooling( lmax, lmin, nouter )
+    
+    solver = GenThreshLandweber( nouter, ninner, thresh  )
+    
+    #solve for x s.t. y = C*x
+    x = solver.solve( C.H, y )
+
+    res = C.H * x
+
+    return res
+
+SwellSeparation( ['enoise'], data , nouter=5, ninner=5, lmax=0.001, lmin=0.1 )
+
+Flow( 'esig', ['enoise', data] , 'math x=${SOURCES[1]} output="x-input"')
+
+#===============================================================================
+# RSF plotting functions
+#===============================================================================
+plot_swell( data, noise, sig , 'enoise', 'esig' )
+

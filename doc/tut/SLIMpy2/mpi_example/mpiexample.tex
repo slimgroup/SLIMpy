@@ -1,0 +1,179 @@
+\documentclass{manual}
+
+\usepackage{graphicx,listings,color}
+
+\definecolor{frame}{rgb}{0.905,0.905,0.905}
+\lstset{language=Python,backgroundcolor=\color{frame},showstringspaces=false,numbers=left,numberstyle=\tiny}
+
+\begin{document}
+    
+    \author{Sean Ross-Ross}
+    \title{Introduction to the New Parallel SLIMpy}
+   
+    \maketitle
+    
+    \ifhtml
+    \chapter*{Front Matter\label{front}}
+    \fi
+    
+    \begin{abstract}
+    This example will explain how to make your existing SLIMpy code into a parallel application. 
+    \end{abstract}
+
+    \section { Copyright }
+    COPYRIGHT: \\
+    Copyright (c) 2006 Sean Ross-Ross \\
+    Discalaimer: You may use this code only under the conditions and terms of \\
+    the license provided with SLIMpy. \\
+    If you do not agree to these terms you may not use this software. 
+    
+
+    \tableofcontents
+    
+    \chapter{Running the demo}
+    This code has so far only been tested on my laptop and not on the cluster (sorry).
+    To run this you need at least SLIMpy development branch Revision: 356. You also need an  mpi environment
+    and latest update from: 
+    \citetitle[https://wave.eos.ubc.ca/SLIM/SLIM.Software.SLIM2RSFext2-MPI]{https://wave.eos.ubc.ca/SLIM/SLIM.Software.SLIM2RSFext2-MPI}
+    
+    
+    Before you  running the script you should configure SLIMpy, to do this run the command 
+    \code{configure_slimpy} located in the SLIMpy/scripts directory. this will write a file \code{~/.slimpy_rc}
+    wich is a python file that contains the default variables for SLIMpy.
+   
+    Otherwise you should just be able to run `\code{scons}'
+    
+    \chapter{Walkthough \label{intro}}
+    
+    \sectionauthor {Sean Ross-Ross}{srossross@gmail.com}
+        The following section contains a walkthrough of an introductory program in SLIMpy.
+        
+        In the \code{sross/mpi_example} directory there are four files:
+        \citetitle[../../users/sross/mpi_example/mpiexample.py]{mpiexample.py},
+        \citetitle[../../users/sross/mpi_example/mpiexample.tex]{mpiexample.tex}, 
+        \citetitle[../../users/sross/mpi_example/SConstruct]{SConstruct} and 
+        \citetitle[../../users/sross/mpi_example/DocSConstruct]{DocSConstruct}
+        
+        The first \code{mpiexample.py} is where I define a very simple set of operations to perform on some data.
+        In this file you will find a function \function{PerformSimleOpBldr(target,source,env)} which will be called through SCons and builds the data.
+        This SCons builder function does the following steps:
+        \begin{enumerate}
+        \item apply a pre-conditioner 
+        \item apply the transform 
+        \item do a thresholding operation
+        \item apply inverse transform.
+        \item apply the inverse pre-conditioner         
+        \end{enumerate}        
+        Very simple, eh?
+        
+        You also see the line:
+        \begin{verbatim}
+PerformSimleOp = add_to_slim_env("PerformSimleOp", PerformSimleOpBldr )
+        \end{verbatim}
+        
+        This adds the builder to the Default SCons environment, so we can import \function{PerformSimleOp} in out SConstruct file.
+	
+	Now lets look at the more interesting part, the  \code{SConstruct} file. In here there are four directives:
+	\begin{itemize}
+	\item An RSF \code{Flow}.
+	\item our \code{PerformSimleOp} in serial.
+	\item  \code{PerformSimleOp} with mpi (but not parallel).
+	\item  \code{PerformSimleOp} with mpi and  parallel.
+	\end{itemize}
+	
+	\section{serial}
+	The first and serial \code{PerformSimleOp} is very straight forward. 
+	One thing to note is that the pre-conditioner and transform are not passed directly into the function but 
+	through callback functions. This is because the \code{space} Objects that they need are created from the rsf header files
+	which are not built at the time that this function is called.
+
+ \begin{notice} [warning] 
+The creation of all SLIMpy objects and global variables should be avoided inside the SConstruct file, Please use callback functions instead. 
+\end{notice}
+
+\begin{verbatim}
+precondition_callback = lambda space: Identity(space)
+transform_callback = lambda space: fdct3(space,4,16,1)
+
+# call simple builder
+sres = PerformSimleOp( serial_result , my_model ,
+                         precondition_callback=precondition_callback,
+                         transform_callback=transform_callback,
+                         thr=0.001,
+                         )
+\end{verbatim}
+        %\verbatiminput{mpiexample.py}
+        \section{mpi (but not parallel)}
+        The second version of this fuction uses the same  \code{PerformSimleOp} function call, but the callback arguments are changed.
+        The \code{scatterMPI} operator \code{S} in rsf uses the newly created mpi program \code{sfwinscumpi}. 
+        This program returns a new type of rsf file format, an XML meta-header. A meta header is one file that contains 
+        information about a collection of scattered files. SLIMpy looks at this meta-header as one file as well. 
+        That is why I have defined the \code{Meta} linear operator \code{M} that can unpack and repack this meta-file
+         into a SLIMpy augmented vector. I return the Compound operator of Scatter and then Unpack. 
+\begin{verbatim}
+def mpi_precondition_callback( space):
+    S = ScatterMPI( space, [2,1,1] )
+    M = Meta( S.range() )
+    return CompoundOperator( [M,S] )
+\end{verbatim}
+	 I have defined the new transform callback with the new ghost update and edge taper which communicates the edges of the scattered files.
+	Remember the the vector that we created with the  pre-conditioner returns an Augmented Vector so we need to pack the
+	vector back into the meta-header fileformat that the \code{GhostTaper}  \code{G} understands. 
+	Since I use the serial \code{fdct3} code I need to unpack the data 
+	after \code{G} is performed.
+\begin{verbatim}
+def mpi_transform_callback( space ):
+    M = Meta( space )
+    G = GhostTaper( M.range(), eps=8 )
+    MA = Meta( G.range() )
+    C = fdct3( MA.range( ), 4, 16, 1 )
+    return CompoundOperator( [C,MA,G,M] )
+\end{verbatim}
+	One thing that is not explicit is how the  \class{fdct3} operator \code{C} is created. Since \code{MA} is an unpacking operator, the function
+	\code{MA.range( )} returns a space created from an \class{AugVector} instance.  \code{C} is therefor created automatically as a diagonal \class{AugOperator}
+	In our case since we Scatter the data in two, \code{C} will look like:
+	\[ C = AugOperator	
+	\left( \begin{array}{cc}
+		fdct3   & 0  \\
+		0 &  fdct3
+	\end{array} \right) 
+	\]
+\begin{verbatim}
+mres = PerformSimleOp( mpi_result , my_model ,
+                         precondition_callback=mpi_precondition_callback,
+                         transform_callback=mpi_transform_callback,
+                         thr=0.001,
+                         )
+\end{verbatim}
+
+	\section{mpi and  parallel}
+
+	The final step to making a parallel application is adding two more lines in the  \code{PerformSimleOp} function call. 
+	the \code{callbacks=['dist']} line tells SLIMpy to use the \class{MultiCoreRunner} class to run the data.The second extra 
+	argument \code{NODELIST=['localhost','localhost'],} sets the global variable \code{NODELIST} for the \class{MultiCoreRunner} instance to look up.
+	alternatively, on the cluster, you could instead  specify the \code{NODEFILE} option.
+\begin{verbatim}
+pmres = PerformSimleOp( parmpi_result , my_model ,
+                         precondition_callback=mpi_precondition_callback,
+                         transform_callback=mpi_precondition_callback,
+                         thr=0.001,
+                        # extra dist flags 
+                        callbacks=['dist'],
+                        NODELIST=['localhost','localhost'],
+                        # NODEFILE=environ['PBS_NODEFILE']
+                         )
+\end{verbatim}
+
+Thats it! 
+You can run `\code{scons}', `\code{scons serial}', `\code{scons mpi}', `\code{scons parallel}' to run all or one of the given commands.
+
+\chapter{file listings}
+\section{mpiexample}
+\verbatiminput{mpiexample.py}
+\section{SConstruct}
+\verbatiminput{SConstruct}
+\section{DocSconscript}
+\verbatiminput{DocSconscript}
+
+	
+\end{document}

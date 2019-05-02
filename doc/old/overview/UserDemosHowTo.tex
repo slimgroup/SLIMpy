@@ -1,0 +1,58 @@
+    \section{Overview}
+    The UserDemos repository is created to allow development on SLIMpy without breaking any users code.
+
+    There are three main branches:
+	\begin{definitions} 
+    	\term{UserDemos/TRUNK}
+    	is for the develoment of the user and you may store broken code in this repository.
+    	\term{UserDemos/branches/beta}
+    	allows the user to check in releases that work with 
+            the current stable release of slimpy.
+            When a user updates the beta branch we will guaranty that 
+            if the code works with the current stable SLIMpy release then we will not break it with
+            with the next stable release
+        
+    	\term{UserDemos/branches/stable}
+            The stable branch will be updated once a developer aproves of the changes to the beta release. 
+	\end{definitions}
+
+    \section{Example}
+    
+    \begin{notice} [note] 
+    if you are creating a new directory you must do 'svn copy' not 'svn merge'! 
+    \end{notice}
+    \begin{enumerate}
+    \item
+    from your package directory commit your latest revision
+    
+    'source howto.sh'
+    export these variables to the repository  and package you want to update
+\item
+    dir of the repo on your machine (can be relative or absolute path)
+    
+    export local_dir="." 
+    dir of the package you want to update
+    
+    export update_package="/sross/simple" 
+    
+\item
+    switch to the beta branch by using 
+    
+    'ud_switch'
+    
+    merge your dev package with the beta branch by using 
+    
+    'ud_merge'
+    
+    
+\item
+commit the changes of the merge by doing
+\begin{notice} [warning] 
+    TEST that the megrge worked by running your demmo.
+\end{notice} 
+    
+    \textbf{svn commit}
+\item
+    switch back to the dev branch by using 'ud_switch_back' 
+    \end{enumerate}
+
